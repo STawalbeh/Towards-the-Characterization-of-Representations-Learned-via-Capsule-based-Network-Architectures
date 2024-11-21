@@ -3,7 +3,9 @@
 
  
 numpy 
-torch 
+
+torch
+
 PIL 
 torchvision 
 scipy 
