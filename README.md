@@ -7,12 +7,19 @@ numpy
 torch
 
 PIL 
+
 torchvision 
+
 scipy 
+
 matplotlib 
+
 sklearn 
 
 opencv-python
+
 pytorch torchvision
+
 pillow
+
 opencv
