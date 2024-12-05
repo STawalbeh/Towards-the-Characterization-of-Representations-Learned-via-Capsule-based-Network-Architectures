@@ -26,7 +26,7 @@ opencv
 
 
 # **Citation**
-Use this bibtex if you enjoyed this repository and you want to cite it:
+Use this bibtex if you enjoyed this repository and you may cite it as follows:
 
 @article{TAWALBEH2025129027,
 title = {Towards the characterization of representations learned via capsule-based network architectures},
