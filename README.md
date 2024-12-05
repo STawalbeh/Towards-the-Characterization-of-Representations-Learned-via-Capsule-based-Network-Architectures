@@ -23,3 +23,18 @@ pytorch torchvision
 pillow
 
 opencv
+
+
+# **Citation**
+Use this bibtex if you enjoyed this repository and you want to cite it:
+
+@article{TAWALBEH2025129027,
+title = {Towards the characterization of representations learned via capsule-based network architectures},
+journal = {Neurocomputing},
+volume = {617},
+pages = {129027},
+year = {2025},
+issn = {0925-2312},
+doi = {https://doi.org/10.1016/j.neucom.2024.129027},
+author = {Saja Tawalbeh and José Oramas},
+keywords = {Path identification, Capsule networks, Interpretation, Explanation, Part-whole relationships, Representation learning},}
