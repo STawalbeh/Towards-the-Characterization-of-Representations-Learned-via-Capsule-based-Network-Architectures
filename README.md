@@ -29,8 +29,11 @@ opencv
 Use this bibtex if you enjoyed this repository and you want to cite it:
 
 @article{TAWALBEH2025129027,
+
 title = {Towards the characterization of representations learned via capsule-based network architectures},
+
 journal = {Neurocomputing},
+
 volume = {617},
 pages = {129027},
 year = {2025},
