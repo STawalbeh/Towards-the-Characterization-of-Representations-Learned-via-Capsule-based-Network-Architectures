@@ -51,7 +51,7 @@ parser.add_argument('--inputSize', type=int, default= 28, metavar='N',
 parser.add_argument('--nEpochs', type=int, default= 60, metavar='N',
                         help='number of epochs')
 
-parser.add_argument('--nFilters', type=int, default= 128, metavar='N',
+parser.add_argument('--nFilters', type=int, default= 256, metavar='N',
                         help='number of filters in the conv layer (default: 256, 128, 64 ..)')
 
 parser.add_argument('--inputChannels', type=int, default= 1, metavar='N',
@@ -99,6 +99,10 @@ trainLoader, valLoader, testLoader= get_setting(args)
 
 if args.task == 'training':
     if args.mode == 'DR':
+        modelTraining(args, device, trainLoader, valLoader, testLoader)
+    elif args.mode == 'EM':
+        modelTraining(args, device, trainLoader, valLoader, testLoader)
+    elif args.mode == 'RR':
         modelTraining(args, device, trainLoader, valLoader, testLoader)
 
 
