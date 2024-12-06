@@ -39,3 +39,11 @@ doi = {https://doi.org/10.1016/j.neucom.2024.129027},
 url = {https://www.sciencedirect.com/science/article/pii/S0925231224017983},
 author = {Saja Tawalbeh and José Oramas},
 keywords = {Path identification, Capsule networks, Interpretation, Explanation, Part-whole relationships, Representation learning},}
+
+
+# **NOTE**
+Please do not hesitate to reach out if you encounter any issues running these experiments.
+
+- saja.tawalbeh@uantwerpen.be
+
+- sajatawalbeh91@gmail.com
