@@ -1,20 +1,19 @@
 # Towards the Characterization of Representations-Learned-via-Capsule-based-Network-Architectures
 
 # **Libraries**
- 
-numpy 
+numpy
 
 torch
 
-PIL 
+PIL
 
-torchvision 
+torchvision
 
-scipy 
+scipy
 
-matplotlib 
+matplotlib
 
-sklearn 
+sklearn
 
 opencv-python
 
@@ -23,6 +22,27 @@ pytorch torchvision
 pillow
 
 opencv
+
+Package                 Version
+
+----------------------- ------------
+
+numpy                   1.23.5
+
+pandas                  1.5.3
+
+Pillow                  9.3.0
+
+pip                     23.0.1
+
+scikit-learn            1.2.2
+
+scipy                   1.10.1
+
+torch                   2.0.0+cu118
+
+torchvision             0.15.1+cu118
+
 
 
 # **Citation**
