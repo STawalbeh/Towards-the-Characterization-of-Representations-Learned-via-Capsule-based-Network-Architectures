@@ -1,5 +1,9 @@
 # Towards the Characterization of Representations-Learned-via-Capsule-based-Network-Architectures
 
+# **NOTE**
+We are currently cleaning our code for this purpose and will do our best to make it available as soon as possible.
+
+
 # **Libraries**
 numpy
 
