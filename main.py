@@ -6,7 +6,7 @@ import argparse
 from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
 from torch.utils.data.dataset import random_split        
-from P1ModelInterpretation.ModelTraining.modeltraining import modelTraining
+from ModelTraining.modeltraining import modelTraining
 
 
 # Training settings
