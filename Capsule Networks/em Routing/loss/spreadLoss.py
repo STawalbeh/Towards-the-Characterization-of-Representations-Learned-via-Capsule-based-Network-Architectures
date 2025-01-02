@@ -11,8 +11,6 @@ class SpreadLoss(_Loss):
 
     def forward(self, x, target, r):
         b, E = x.shape
-        
-        
         assert E == self.num_class
         margin = self.m_min + (self.m_max - self.m_min)*r
 
