@@ -4,7 +4,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import math
 
-chsize= 28
+
 class PrimaryCaps(nn.Module):
     r"""Creates a primary convolutional capsule layer
     that outputs a pose matrix and an activation.
@@ -290,45 +290,33 @@ class ConvCaps(nn.Module):
             p_out, a_out1, route, vot = self.caps_em_routing(v, a_in, self.C, self.eps)
 
             p_out = p_out.view(b, oh, ow, self.C * self.psize)
-            #print('p_out.shape ', p_out.shape)
             a_out = a_out1.view(b, oh, ow, self.C)
-            #print('aout ', a_out.shape)
             out = torch.cat([p_out, a_out], dim=3)
-            #print('out after th concat  ', out.shape)
         else:
             assert c == self.B * (self.psize + 1)
             assert 1 == self.K
             assert 1 == self.stride
-            #print('The input activation X to the forward opertation before a_in and p_in', x.shape)
             p_in = x[:, :, :, :self.B * self.psize].contiguous()
             a_in = x[:, :, :, self.B * self.psize:].contiguous()
 
             if activation_mask is not None:
                 assert a_in.shape[1:] == activation_mask.shape[1:]
                 a_in *= activation_mask
-                #print('a_in after a_in *= activation_mask ', a_in.shape)
 
             p_in = p_in.view(b, h * w * self.B, self.psize)
             a_in = a_in.view(b, h * w * self.B, 1)
 
-            #print('p_in and a_in after view', p_in.shape, 'a_in ', a_in.shape)
-
             # transform view
             v = self.transform_view(p_in, self.weights, self.C, self.P, self.w_shared)
-            #print('the vector shape v transforma ', v.shape)
-
             # coor_add
             if self.coor_add:
                 v = self.add_coord(v, b, h, w, self.B, self.C, self.psize)
 
             # em_routing
             p_out, a_out1, route, vot = self.caps_em_routing(v, a_in, self.C, self.eps)
-            #print(p_out.shape)
             p_out = p_out.squeeze(1) #([1, 1, 10, 16])
             a_out = a_out1.unsqueeze(-1) #[1, 512, 1])
-            #print(a_in.shape)
             out = torch.cat([p_out, a_out], dim=2) #[1, 10, 17])
-            #print(out.shape)
 
         if self.return_routes:
             return out, route, vot, a_out1, a_in
@@ -371,18 +359,19 @@ class CapsNet(nn.Module):
         ...
     """
 
-    def __init__(self, A=32, B=32, C=32, D=32, E=10, K=3, P=4, iters=3):
+    def __init__(self, args):
         super(CapsNet, self).__init__()
-        channels= 1
-        self.conv1 = nn.Conv2d(in_channels=channels, out_channels=A,
+        K=3
+        P=4
+        self.conv1 = nn.Conv2d(in_channels=args.inputChannels, out_channels=args.CapsA,
                                kernel_size=5, stride=2, padding=2)
-        self.bn1 = nn.BatchNorm2d(num_features=A, eps=0.001,
+        self.bn1 = nn.BatchNorm2d(num_features=args.CapsA, eps=0.001,
                                   momentum=0.1, affine=True)
         self.relu1 = nn.ReLU(inplace=False)
-        self.primary_caps = PrimaryCaps(A, B, 1, P, stride=1)
-        self.conv_caps1 = ConvCaps(B, C, K, P, stride=2, iters=iters)
-        self.conv_caps2 = ConvCaps(C, D, K, P, stride=1, iters=iters)
-        self.class_caps = ConvCaps(D, E, 1, P, stride=1, iters=iters,
+        self.primary_caps = PrimaryCaps(args.CapsA, args.CapsB, 1, P, stride=1)
+        self.conv_caps1 = ConvCaps(args.CapsB, args.CapsC, K, P, stride=2, iters=args.iters)
+        self.conv_caps2 = ConvCaps(args.CapsC, args.CapsD, K, P, stride=1, iters=args.iters)
+        self.class_caps = ConvCaps(args.CapsD, args.classesNum, 1, P, stride=1, iters=args.iters,
                                    coor_add=True, w_shared=True)
 
         self.activation_mask1 = None
@@ -390,62 +379,57 @@ class CapsNet(nn.Module):
         self.activation_mask3 = None
 
         self.decoder = nn.Sequential(
-            nn.Linear(E * P ** 2, 512),
+            nn.Linear(args.classesNum * P ** 2, 512),
             nn.ReLU(),
             nn.Linear(512, 1024),
             nn.ReLU(),
-            nn.Linear(1024, channels * chsize * chsize),
+            nn.Linear(1024, args.inputChannels * args.inputSize * args.inputSize),
             nn.Sigmoid()
         )#784 , 2304 , 4096, 4096
 
-    def forward(self, x, recon=False, probe=False): #def forward(self, x, y, recon=True, probe=False):
+    def forward(self, x, y, recon=True, probe=False):  # def forward(self, x, y, recon=True, probe=False):
         x = self.conv1(x)
         x = self.bn1(x)
         x = self.relu1(x)
         # 1st activations probe
         x = self.primary_caps(x)
         # 2nd activations probe
-        #print('The input activations to CC1 - the output from PC', x.shape)
+        # print('The input activations to CC1 - the output from PC', x.shape)
         x = self.conv_caps1(x, self.activation_mask1)
-        #print('The input activations to CC2 the output from CC1', x.shape)
+        # print('The input activations to CC2 the output from CC1', x.shape)
         # 3rd activations probe
         x = self.conv_caps2(x, self.activation_mask2)
-        #print('The input activations to Classcaps - CC2', x.shape)
+        # print('The input activations to Classcaps - CC2', x.shape)
         # 4th activations probe
         x = self.class_caps(x, self.activation_mask3)
-        
+
         # 5th activations probe
         # split into pose and activations
         p = x[:, :, :-1].contiguous()
 
         a = x[:, :, -1:].contiguous().squeeze(-1)
 
-        #print(' pose ', p.shape)
-        #print(' pose ', p)
-        #print('---------------------------------------')
-        #print(' activation ', a.shape)
-        #print(' activation ', a)
+        # print(' pose ', p.shape)
+        # print(' pose ', p)
+        # print('---------------------------------------')
+        # print(' activation ', a.shape)
+        # print(' activation ', a)
 
-        
+
         if recon:
-            y =0
             # feed pose into decoder for reconstruction
-            #print('y ', y)
+            # print('y ', y)
             target_pose = p[torch.arange(0, p.shape[0], device=x.device), y, :]
-            #print('target_pose ', target_pose.shape)
+            # print('target_pose ', target_pose.shape)
             d_in = torch.zeros(target_pose.shape[0], target_pose.shape[1] * 10, device=x.device)
 
-
             for i, _y in enumerate(y):
-                
-                #print(i, i + 1, ' _y ', _y)
+                # print(i, i + 1, ' _y ', _y)
                 d_in[i, _y * 16:(_y + 1) * 16] = target_pose[i:i + 1]
-                #print(' i', i, ' _y * 16', _y * 16)
-                #print(' i', i, ' (_y + 1) * 16',(_y + 1) * 16)
+                # print(' i', i, ' _y * 16', _y * 16)
+                # print(' i', i, ' (_y + 1) * 16',(_y + 1) * 16)
 
-            
             recon = self.decoder(d_in)
-
 
             return a, recon
         else:
@@ -514,13 +498,14 @@ class CapsNet(nn.Module):
         yield p
 
 
-def capsules(**kwargs):
+def capsules(args):
     """Constructs a CapsNet model.
     """
-    model = CapsNet(**kwargs)
+    model = CapsNet(args)
+    print(model)
     return model
 
 
 if __name__ == '__main__':
     model = capsules(E=10)
-    print(model)
+    #print(model)
