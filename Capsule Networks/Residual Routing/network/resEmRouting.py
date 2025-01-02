@@ -1,12 +1,6 @@
+import math
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
-import numpy as np
-import math
-import pdb
-from torch.autograd.variable import Variable
-from torch.nn.modules.loss import _Loss
-
 class BasicConv2d_activation(nn.Module):
     def __init__(self, in_planes, out_planes, kernel_size, stride=1, padding=0, dilation=1):
         super(BasicConv2d_activation, self).__init__()
@@ -517,12 +511,8 @@ class ConvCaps(nn.Module):
             #x = x.reshape(b, 1, 1, h*w*c)
             #b, h, w, c = x.shape
             p_in = x[:, :, :, :self.B*self.psize].contiguous()
-            #a_in = x[:, :, :, :, :, self.B*self.psize:].contiguous()
             p_in = p_in.view(b, h*w*self.B, self.psize)
-            #a_in = a_in.view(b*oh*ow, self.K*self.K*self.B, 1)
-            
             p_pose = self.transform_view(p_in, self.weights, self.P)
-            #p_out = F.dropout(p_out, p = 0.5)
             p_out_R = p_pose.reshape(p_pose.size(0), -1)
             p_out_R = p_out_R.reshape(b, h, w, -1)
             p_out = p_out_R
@@ -533,11 +523,8 @@ class ConvCaps(nn.Module):
             
             
             a_out = self.conv1(p_in_T)
-            #print('a_out ', a_out.shape)
             out = a_out.reshape(b, -1)
-            #print('out ', out.shape)
 
-        #return out, p_out, a_out
         return out, p_pose
 
 
@@ -575,48 +562,50 @@ class CapsNet(nn.Module):
         iters: number of EM iterations
         ...
     """
-    def __init__(self, A=32, B=32, C=32, D=32, E=10, FF=8, G=8, K=3, P=4, iters=3):
+    def __init__(self,args):
+        #A = 32, B = 32, C = 32, D = 32, E = 10, FF = 8, G = 8, K = 3, P = 4, iters = 3
+        FF, G, K, P= 8, 8, 3, 4
         super(CapsNet, self).__init__()
-        self.conv1 = nn.Conv2d(in_channels=3, out_channels=A,
+        self.conv1 = nn.Conv2d(in_channels=args.inputChannels, out_channels=args.CapsA,
                                kernel_size=5, stride=1, padding=2)
-        self.bn1 = nn.BatchNorm2d(num_features=A, eps=0.001,
+        self.bn1 = nn.BatchNorm2d(num_features=args.CapsA, eps=0.001,
                                  momentum=0.1, affine=True)
-        self.bn2 = nn.BatchNorm2d(num_features=B*17, eps=0.001,
+        self.bn2 = nn.BatchNorm2d(num_features=args.CapsB*17, eps=0.001,
                                  momentum=0.1, affine=True)
-        self.bn3 = nn.BatchNorm2d(num_features=C*17, eps=0.001,
+        self.bn3 = nn.BatchNorm2d(num_features=args.CapsC*17, eps=0.001,
                                  momentum=0.1, affine=True)
-        self.bn4 = nn.BatchNorm2d(num_features=D*17, eps=0.001,
+        self.bn4 = nn.BatchNorm2d(num_features=args.CapsD*17, eps=0.001,
                                  momentum=0.1, affine=True)      
         self.bn5 = nn.BatchNorm2d(num_features=FF*17, eps=0.001,
                                  momentum=0.1, affine=True)   
         self.bn6 = nn.BatchNorm2d(num_features=G*17, eps=0.001,
                                  momentum=0.1, affine=True)        
         self.relu1 = nn.ReLU(inplace=False)
-        self.primary_caps1 = PrimaryCaps(A, B, 1, P, stride=2)
-        self.primary_caps2 = PrimaryCaps(B*17, C, 1, P, stride=2)
-        self.primary_caps3 = PrimaryCaps(C*17, D, 1, P, stride=2)
-        self.primary_caps4 = PrimaryCaps(D*17, FF, 1, P, stride=2)
+        self.primary_caps1 = PrimaryCaps(args.CapsA, args.CapsB, 1, P, stride=2)
+        self.primary_caps2 = PrimaryCaps(args.CapsB*17, args.CapsC, 1, P, stride=2)
+        self.primary_caps3 = PrimaryCaps(args.CapsC*17, args.CapsD, 1, P, stride=2)
+        self.primary_caps4 = PrimaryCaps(args.CapsD*17, FF, 1, P, stride=2)
         #self.primary_caps5 = PrimaryCaps(FF*17, E, 1, P, stride=1)
-        self.primary_caps5 = PrimaryCapsClass(FF*17, E, 1, P, stride=1, h=2, w=2)
-        self.conv_caps1_1 = ConvCaps(B, C, K, P, stride=1, iters=iters)
-        self.conv_caps1_2 = ConvCaps(B, C, K, P, stride=1, iters=iters)
-        self.conv_caps2_1 = ConvCaps(C, D, K, P, stride=1, iters=iters)
-        self.conv_caps2_2 = ConvCaps(C, D, K, P, stride=1, iters=iters)
-        self.conv_caps3_1 = ConvCaps(D, FF, K, P, stride=1, iters=iters)
-        self.conv_caps3_2 = ConvCaps(D, FF, K, P, stride=1, iters=iters)
-        self.conv_caps4_1 = ConvCaps(FF, G, K, P, stride=1, iters=iters)
-        self.conv_caps4_2 = ConvCaps(FF, G, K, P, stride=1, iters=iters)
-        self.class_caps = ConvCaps(E, E, 1, P, stride=1, iters=iters,
+        self.primary_caps5 = PrimaryCapsClass(FF*17, args.classesNum, 1, P, stride=1, h=2, w=2)
+        self.conv_caps1_1 = ConvCaps(args.CapsC, args.CapsC, K, P, stride=1, iters=args.iters)
+        self.conv_caps1_2 = ConvCaps(args.CapsB, args.CapsC, K, P, stride=1, iters=args.iters)
+        self.conv_caps2_1 = ConvCaps(args.CapsC, args.CapsD, K, P, stride=1, iters=args.iters)
+        self.conv_caps2_2 = ConvCaps(args.CapsC, args.CapsD, K, P, stride=1, iters=args.iters)
+        self.conv_caps3_1 = ConvCaps(args.CapsD, FF, K, P, stride=1, iters=args.iters)
+        self.conv_caps3_2 = ConvCaps(args.CapsD, FF, K, P, stride=1, iters=args.iters)
+        self.conv_caps4_1 = ConvCaps(FF, G, K, P, stride=1, iters=args.iters)
+        self.conv_caps4_2 = ConvCaps(FF, G, K, P, stride=1, iters=args.iters)
+        self.class_caps = ConvCaps(args.classesNum, args.classesNum, 1, P, stride=1, iters=args.iters,
                                         coor_add=True, w_shared=True) 
-        self.convd = RF(A, A)
+        self.convd = RF(args.CapsA, args.CapsA)
 
 
         self.decoder = nn.Sequential(
-            nn.Linear(E * P ** 2, 512),
+            nn.Linear(args.classesNum * P ** 2, 512),
             nn.ReLU(),
             nn.Linear(512, 1024),
             nn.ReLU(),
-            nn.Linear(1024, 3 * 32 * 32),
+            nn.Linear(1024, args.inputChannels * args.inputSize * args.inputSize),
             nn.Sigmoid()
         )#784 , 2304 , 4096, 4096
 
@@ -666,10 +655,11 @@ class CapsNet(nn.Module):
 
 
 
-def capsules(**kwargs):
+def capsulesRR(args):
     """Constructs a CapsNet model.
     """
-    model = CapsNet(**kwargs)
+    model = CapsNet(args)
+    print(model)
     return model
 
 
@@ -681,4 +671,4 @@ python -m capsules.py
 ```
 '''
 if __name__ == '__main__':
-    model = capsules(E=10)
+    model = capsulesRR(E=10)
