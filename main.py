@@ -11,7 +11,7 @@ from ModelTraining.modeltraining import modelTraining
 
 # Training settings
 parser = argparse.ArgumentParser(description='PyTorch Matrix-Capsules-EM')
-parser.add_argument('--batchSize', type=int, default= 32, metavar='N',
+parser.add_argument('--batchSize', type=int, default= 2, metavar='N',
                         help='input batch size for training (default: 128)')
 
 parser.add_argument('--no-cuda', action='store_true', default=False,
@@ -30,10 +30,10 @@ parser.add_argument('--data-folder', type=str, default='../data', metavar='DF',
 parser.add_argument('--dataset', type=str, default='MNIST', metavar='D',
                         help='dataset for training(MNIST, SVHN, CIFAR, CelebA)')
 
-parser.add_argument('--mode', type=str, default='DR', metavar='D',
+parser.add_argument('--mode', type=str, default='RR', metavar='D',
                         help='dataset for training(DR, EM, RR,ER)')
 
-parser.add_argument('--preTrainedModel', type=str, default='/home/saja/PycharmProjects/pythonProject1/P1ModelInterpretation/BestModels/MNISTDR.pth', metavar='SF',
+parser.add_argument('--preTrainedModel', type=str, default='/home/saja/PycharmProjects/pythonProject1/P1ModelInterpretation/BestModels/MNISTEM.pth', metavar='SF',
                         help='where to store the snapshots(path--)')
 
 parser.add_argument('--task', type=str, default='training', metavar='N',
@@ -51,7 +51,7 @@ parser.add_argument('--inputSize', type=int, default= 28, metavar='N',
 parser.add_argument('--nEpochs', type=int, default= 60, metavar='N',
                         help='number of epochs')
 
-parser.add_argument('--nFilters', type=int, default= 256, metavar='N',
+parser.add_argument('--nFilters', type=int, default= 128, metavar='N',
                         help='number of filters in the conv layer (default: 256, 128, 64 ..)')
 
 parser.add_argument('--inputChannels', type=int, default= 1, metavar='N',
@@ -59,6 +59,34 @@ parser.add_argument('--inputChannels', type=int, default= 1, metavar='N',
 
 parser.add_argument('--numSamples', type=int, default= 0, metavar='Y',
                         help='number of samples (default: 1,51)')
+
+'''---------Mostly EM and RR routing setting --------------------------'''
+## the initial setting for EM
+## CapsA, CapsB, CapsC, CapsD, FF, G, E = 32, 32, 32, 32, 16, 16, 5
+#CapsA, CapsB, CapsC, CapsD= 32, 32, 32, 32
+
+## the initial setting for RR
+## CapsA, CapsB, CapsC, CapsD, FF, G, E = 32, 32, 32, 32, 16, 16, 5
+parser.add_argument('--lr', type=float, default=3e-3, metavar='LR', #3e-3
+                        help='learning rate (default: 0.01)')
+
+parser.add_argument('--weight-decay', type=float, default=2e-7, metavar='WD',
+                        help='weight decay (default: 0)')  # moein - according to openreview (2e-7)
+
+parser.add_argument('--log-interval', type=int, default=10, metavar='N',
+                        help='how many batches to wait before logging training status')
+parser.add_argument('--iters', type=int, default=3, metavar='N',
+                        help='iterations of EM Routing')
+
+parser.add_argument('--CapsA', type=int, default=12, metavar='N',
+                        help='defult 32')
+parser.add_argument('--CapsB', type=int, default=12, metavar='N',
+                        help='defult 32')
+parser.add_argument('--CapsC', type=int, default=12, metavar='N',
+                        help='defult 32')
+parser.add_argument('--CapsD', type=int, default=12, metavar='N',
+                        help='defult 32')
+
 
 def get_setting(args):
     CapsNet=0
@@ -76,6 +104,7 @@ def get_setting(args):
 
         testloader = torch.utils.data.DataLoader(test_data, batch_size=args.batchSize, shuffle=False)
         train_, valid_ = random_split(train_data, [50000, 10000])
+
         
         validloader = DataLoader(valid_, batch_size=args.batchSize)
         trainloader = DataLoader(train_, batch_size=args.batchSize)
@@ -98,13 +127,7 @@ print(f'the device in  this case is {device}')
 trainLoader, valLoader, testLoader= get_setting(args)
 
 if args.task == 'training':
-    if args.mode == 'DR':
-        modelTraining(args, device, trainLoader, valLoader, testLoader)
-    elif args.mode == 'EM':
-        modelTraining(args, device, trainLoader, valLoader, testLoader)
-    elif args.mode == 'RR':
-        modelTraining(args, device, trainLoader, valLoader, testLoader)
-
+    modelTraining(args, device, trainLoader, valLoader, testLoader)
 
 #elif args.task == 'interpretation':
 
