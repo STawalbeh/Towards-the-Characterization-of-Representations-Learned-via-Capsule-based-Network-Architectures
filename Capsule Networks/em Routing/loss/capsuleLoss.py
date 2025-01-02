@@ -1,5 +1,5 @@
 import torch
-from mainProjects.Models.emRouting.loss.spreadLoss import SpreadLoss
+from CapsuleNetworks.emRouting.loss.spreadLoss import SpreadLoss
 from torch.nn.modules.loss import _Loss
 
 class CapsuleLoss(_Loss):
