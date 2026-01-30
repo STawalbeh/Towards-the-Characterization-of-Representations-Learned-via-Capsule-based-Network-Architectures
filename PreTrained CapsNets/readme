@@ -1,0 +1,2 @@
+We provide a pretrained Capsule Network based on the dynamic routing mechanism, following the original implementation proposed by Sabour et al. (“Dynamic Routing Between Capsules”). 
+The network is trained on the MNIST dataset and achieves stable classification performance while preserving the interpretable properties characteristic of capsule-based representations.
